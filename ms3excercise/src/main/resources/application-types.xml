@@ -116,4 +116,13 @@ type ContactsWithIDArray = Array<{|  Identification: {|    FirstName: String,   
       </types:input-event>
     </types:processor-declaration>
   </types:enrichment>
+  <types:enrichment select="#f11b5073-75cf-4f14-87f9-b29a3c6b05aa">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="Contact"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
 </types:mule>

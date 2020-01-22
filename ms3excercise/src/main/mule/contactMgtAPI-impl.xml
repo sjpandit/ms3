@@ -44,19 +44,8 @@ fun checkComm(pay) = if (sizeOf(pay.Communication default {})>0)(
 {Iden:checkIden(payload),Addr:checkAddr(payload) ,Comm:checkComm(payload)}]]></ee:set-payload>
 				</ee:message>
 			</ee:transform>
-			<error-handler>
-					<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="bdc54af5-512f-42b7-9943-9090aa60e0c4" type="DB:BAD_SQL_SYNTAX, DB:CONNECTIVITY, DB:QUERY_EXECUTION, DB:RETRY_EXHAUSTED">
-						<logger level="INFO" doc:name="Logger" doc:id="45e80ae6-83dc-4fd1-abda-c2c8cff5e0f6" />
-						<set-variable value="500" doc:name="Set Variable" doc:id="81ce03a2-a0db-441c-a79d-f60cebe2937a" variableName="httpStatus" />
-						<set-payload value='#[{"message":"Error inserting contacts. Internal Server Error " }]' doc:name="Set Payload" doc:id="e2c2b9da-8f3c-4e08-81ce-aa2887e7b71b" />
-					</on-error-propagate>
-				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="24a01b04-84c3-484b-aeb7-ccb81bb3c7ef" type="VALIDATION:EMPTY_COLLECTION">
-					<logger level="INFO" doc:name="Logger" doc:id="f9f3eb6b-ee10-404b-af11-974b057eecdd" />
-					<set-variable value="404" doc:name="Set Variable" doc:id="8787dfe1-f91b-40bf-ab27-961a66bdace5" variableName="httpStatus"/>
-					<set-payload value='#[{"message":"Contact not found"}]' doc:name="Set Payload" doc:id="72646b8d-3ff2-45e3-ab41-3b90b7567b52" />
-				</on-error-propagate>
-			    </error-handler>
-		</try>
+		
+</try>
         <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="1bca718c-f721-4524-bc1b-e6866976f2bd">
             <ee:message>
                 <ee:set-payload><![CDATA[%dw 2.0
@@ -66,7 +55,14 @@ output application/json
   message: "Contact modified"
 }]]></ee:set-payload>
             </ee:message>
-        </ee:transform></flow>
+        </ee:transform>
+			<error-handler>
+					<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c4215837-775f-4f4d-90c0-6b59a557ed74" type="DB:BAD_SQL_SYNTAX, DB:CONNECTIVITY, DB:QUERY_EXECUTION, DB:RETRY_EXHAUSTED">
+						<logger level="INFO" doc:name="Logger" doc:id="6da13e51-e389-44b2-8e81-d70707b1cb3c" />
+						<set-variable value="500" doc:name="Set Variable" doc:id="4c2f34de-a194-42f5-b618-63b448b77180" variableName="httpStatus" />
+						<set-payload value='#[{"message":"Error inserting contacts. Internal Server Error " }]' doc:name="Set Payload" doc:id="0f71e669-f931-4a4f-b9f3-c7a4eedda76d" />
+					</on-error-propagate>
+			    </error-handler></flow>
 	<flow name="get" doc:id="7d92a54d-3033-4bf6-a3a4-8ddc0374ce00">
 		<set-variable doc:name="Create Query" doc:id="614aa78b-d7a2-4b92-90fe-d6bed5516821" variableName="query" value="#[%dw 2.0
 output text/plain
@@ -196,7 +192,7 @@ output application/json
                 <ee:set-variable variableName="id"><![CDATA[attributes.uriParams.'id']]></ee:set-variable>
             </ee:variables>
         </ee:transform></flow>
-	<flow name="postFlow" doc:id="e2510ae3-2fae-4e65-ad24-65743f7538d7" ><try doc:name="Try" doc:id="a6835003-78a9-4b99-8b79-a8923a93b736" transactionalAction="ALWAYS_BEGIN">
+	<flow name="postFlow" doc:id="e2510ae3-2fae-4e65-ad24-65743f7538d7" ><try doc:name="Try" doc:id="a6835003-78a9-4b99-8b79-a8923a93b736" transactionalAction="BEGIN_OR_JOIN">
 			<foreach doc:name="For Each" doc:id="d097b588-e64a-411f-a8a9-ce214b8bf7bf">
 				<db:insert doc:name="InsertToIDTable" doc:id="ae42a42b-1600-413d-8e5d-5d2546b6593b" config-ref="Database_Config" transactionalAction="ALWAYS_JOIN" target="var1">
 			<reconnect />
@@ -240,13 +236,6 @@ output application/json
 					</db:insert>
 				</foreach>
 		</foreach>
-			<error-handler>
-				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="369edbff-a809-4dee-afea-f70a64c00551" type="DB:BAD_SQL_SYNTAX, DB:CONNECTIVITY, DB:QUERY_EXECUTION, DB:RETRY_EXHAUSTED">
-					<logger level="INFO" doc:name="Logger" doc:id="8ed4a4a9-f20e-4291-9e8e-a427bdf1f500" />
-					<set-variable value="500" doc:name="Set Variable" doc:id="d07ae532-144f-40fe-a852-b562370555f6" variableName="httpStatus" />
-					<set-payload value='#[{"message":"Error inserting contacts. Internal Server Error " }]' doc:name="Set Payload" doc:id="26bfe296-6d99-410b-a884-34139b7f57df" />
-				</on-error-propagate>
-			</error-handler>
 		</try>
 		<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="
 http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd 
@@ -265,7 +254,14 @@ output text/plain
 ---
 201]]></ee:set-variable>
 			</ee:variables>
-        </ee:transform></flow>
+        </ee:transform>
+			<error-handler>
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="48df083b-79ac-4ef0-923b-1a7cf45ab4b4" type="DB:BAD_SQL_SYNTAX, DB:CONNECTIVITY, DB:QUERY_EXECUTION, DB:RETRY_EXHAUSTED">
+					<logger level="INFO" doc:name="Logger" doc:id="29882148-2481-486b-98b8-492819c8e615" />
+					<set-variable value="500" doc:name="Set Variable" doc:id="347f6382-65e6-404f-acde-c16ef50393e0" variableName="httpStatus" />
+					<set-payload value='#[{"message":"Error inserting contacts. Internal Server Error " }]' doc:name="Set Payload" doc:id="a672a35e-c407-4b8e-b093-ffc65359d7ce" />
+				</on-error-propagate>
+			</error-handler></flow>
 	<flow name="updateAddress" doc:id="6d6f3b37-c1ff-4566-a71f-3f469beadaf9" >
 		<try doc:name="Try" doc:id="b0ca87a1-42d4-4a96-8071-ad3bbc9ce4e1" transactionalAction="BEGIN_OR_JOIN" transactionType="XA">
 			<db:delete doc:name="Delete in Address" doc:id="dd8034fe-cc27-4710-b792-3ca1946bfcf5" config-ref="Database_Config" target="var2" transactionalAction="ALWAYS_JOIN">
@@ -337,13 +333,6 @@ WHERE contact_id=:id</db:sql>
 				<db:sql >Delete from communication_tbl where contact_id=:id</db:sql>
 				<db:input-parameters ><![CDATA[#[{'id':attributes.uriParams.id}]]]></db:input-parameters>
 			</db:delete>
-			<error-handler >
-				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ee6f81b7-af87-4bb4-9b54-762cef390022" type="DB:BAD_SQL_SYNTAX, DB:CONNECTIVITY, DB:QUERY_EXECUTION, DB:RETRY_EXHAUSTED">
-					<logger level="INFO" doc:name="Logger" doc:id="6725fc8c-83c1-47eb-a32f-f41a348fe2d9" />
-					<set-variable value="400" doc:name="Set Variable" doc:id="05133f5e-dd2a-45ed-ba4c-830649d41784" variableName="httpStatus"/>
-					<set-payload value='#[{"message":"Error deleting contacts"}]' doc:name="Set Payload" doc:id="89707302-9e47-4be9-b728-07b5a7a7b874" />
-				</on-error-propagate>
-			</error-handler>
 		</try>
 		<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="0190bd89-ad02-49ca-878e-057b1cd8e949">
@@ -355,11 +344,18 @@ output application/json
   message: "Contact deleted"
 }]]></ee:set-payload>
             </ee:message>
-        </ee:transform></flow>
+        </ee:transform>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="291e7b48-9461-46e2-b366-657a4fe54be7" type="DB:BAD_SQL_SYNTAX, DB:CONNECTIVITY, DB:QUERY_EXECUTION, DB:RETRY_EXHAUSTED">
+					<logger level="INFO" doc:name="Logger" doc:id="325870a0-af70-4c93-9ad2-92d159bb0bdb" />
+					<set-variable value="400" doc:name="Set Variable" doc:id="76da01ea-fd0b-42ac-b02f-76f8c95f0204" variableName="httpStatus"/>
+					<set-payload value='#[{"message":"Error deleting contacts"}]' doc:name="Set Payload" doc:id="a74c6e45-164c-4d57-b8ce-0cf3e2daae54" />
+				</on-error-propagate>
+			</error-handler></flow>
 	<flow name="putByID" doc:id="3f18354c-7c71-4ac5-92e7-edf2c9659720">
-		<try doc:name="Try" doc:id="f11b5073-75cf-4f14-87f9-b29a3c6b05aa" transactionalAction="ALWAYS_BEGIN">
+		<try doc:name="Try" doc:id="f11b5073-75cf-4f14-87f9-b29a3c6b05aa" transactionalAction="BEGIN_OR_JOIN">
 			<set-variable value="#[attributes.uriParams.id]" doc:name="Set Variable" doc:id="a38e3e00-6fb9-4a7c-925e-a2a996f911d0" variableName="contact_id"/>
-			<db:update doc:name="UpdateIdTable" doc:id="7c6c6e2e-da35-45bb-b972-0b71d3be32ce" config-ref="Database_Config" target="var1" transactionalAction="ALWAYS_JOIN">
+			<db:update doc:name="UpdateIdTable" doc:id="7c6c6e2e-da35-45bb-b972-0b71d3be32ce" config-ref="Database_Config" target="updateRes" transactionalAction="ALWAYS_JOIN">
 				<db:sql >UPDATE identification_tbl
 SET first_name = :FirstName, last_name = :LastName, dob=:DOB, gender=:Gender, title=:Title 
 WHERE contact_id=:id</db:sql>
@@ -370,15 +366,16 @@ WHERE contact_id=:id</db:sql>
 		'Title': upper(payload.Identification.Title),
 		'id': vars.contact_id}]]]></db:input-parameters>
 			</db:update>
+			<validation:is-false doc:name="Is false" doc:id="df51926a-d905-4390-890d-708369b86a6f" expression="#[vars.updateRes.affectedRows ==0]"/>
 			<db:delete doc:name="DeleteInAddress" doc:id="feaafd0e-2b0e-4241-b248-cab1fcd2ec0f" config-ref="Database_Config" target="var2" transactionalAction="ALWAYS_JOIN">
-				<db:sql >Delete from address_tbl where contact_id=:id</db:sql>
-				<db:input-parameters ><![CDATA[#[{'id':attributes.uriParams.id}]]]></db:input-parameters>
+				<db:sql>Delete from address_tbl where contact_id=:id</db:sql>
+				<db:input-parameters><![CDATA[#[{'id':attributes.uriParams.id}]]]></db:input-parameters>
 			</db:delete>
 			<foreach doc:name="For Each" doc:id="c22d9ae7-3683-49f9-8cb5-83e5071e6313" collection="#[payload.Address]">
-					<db:insert doc:name="InsertInAddress" doc:id="9915f9b8-70af-4ad9-a443-08ab24a3c9c4" config-ref="Database_Config" transactionalAction="ALWAYS_JOIN">
-						<db:sql >INSERT INTO address_tbl(addrType, addrNumber, street, unit,city, state, zipcode, contact_id)
+						<db:insert doc:name="InsertInAddress" doc:id="9915f9b8-70af-4ad9-a443-08ab24a3c9c4" config-ref="Database_Config" transactionalAction="ALWAYS_JOIN">
+						<db:sql>INSERT INTO address_tbl(addrType, addrNumber, street, unit,city, state, zipcode, contact_id)
         VALUES (upper(:type),:number, :street, :unit,:city,:state, :zipcode,:contact_id)</db:sql>
-						<db:input-parameters ><![CDATA[#[{
+						<db:input-parameters><![CDATA[#[{
 	 'type':payload."type",
 		'number':payload.number,
 		'street': payload.street,
@@ -389,16 +386,17 @@ WHERE contact_id=:id</db:sql>
 		'contact_id': vars.contact_id
 }]]]></db:input-parameters>
 					</db:insert>
+
 				</foreach>
-				<db:delete doc:name="DeleteInComm" doc:id="189f62d1-ca7e-4f2f-ab66-bab297207787" config-ref="Database_Config" transactionalAction="ALWAYS_JOIN" target="var4">
-				<db:sql >Delete from communication_tbl where contact_id=:id</db:sql>
-				<db:input-parameters ><![CDATA[#[{'id':vars.contact_id}]]]></db:input-parameters>
+			<db:delete doc:name="DeleteInComm" doc:id="189f62d1-ca7e-4f2f-ab66-bab297207787" config-ref="Database_Config" transactionalAction="ALWAYS_JOIN" target="var4">
+				<db:sql>Delete from communication_tbl where contact_id=:id</db:sql>
+				<db:input-parameters><![CDATA[#[{'id':vars.contact_id}]]]></db:input-parameters>
 			</db:delete>
 			<foreach doc:name="For Each" doc:id="3c8fe863-2e6e-4a44-a47e-6808a249c830" collection="#[payload.Communication]">
 					<db:insert doc:name="InsertInComm" doc:id="ce3c1d79-d46c-473d-8eae-a46ae1a420d9" config-ref="Database_Config" transactionalAction="ALWAYS_JOIN">
-						<db:sql >INSERT INTO communication_tbl(commType, commValue,preferred,contact_id)
+						<db:sql>INSERT INTO communication_tbl(commType, commValue,preferred,contact_id)
         VALUES (upper(:type), :value, :preferred,:contact_id)</db:sql>
-						<db:input-parameters ><![CDATA[#[{
+						<db:input-parameters><![CDATA[#[{
 	 'type':payload."type",
 		'value':payload.value,
 		'preferred': payload.preferred,
@@ -406,15 +404,7 @@ WHERE contact_id=:id</db:sql>
 }]]]></db:input-parameters>
 					</db:insert>
 				</foreach>
-				<error-handler>
-					<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="e14054bc-0ca0-4925-8904-bb3a2a2702cb" type="DB:BAD_SQL_SYNTAX, DB:CONNECTIVITY, DB:QUERY_EXECUTION, DB:RETRY_EXHAUSTED">
-						<logger level="INFO" doc:name="Logger" doc:id="d0c6043a-69f8-4346-bf89-54430afde051" />
-						<set-variable value="500" doc:name="Set Variable" doc:id="5b52d48f-ddf6-4631-8b1d-62ab3066017c" variableName="httpStatus" />
-						<set-payload value='#[{"message":"Error inserting contacts. Internal Server Error " }]' doc:name="Set Payload" doc:id="2b82c333-9223-4858-a80e-81e36215aa59" />
-					</on-error-propagate>
-			    </error-handler>
-		</try>
-		<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="
+			<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="8a94c884-d029-4d9e-bb71-2fd1c65c1e1b">
             <ee:message>
                 <ee:set-payload><![CDATA[%dw 2.0
@@ -424,5 +414,19 @@ output application/json
   message: "Contact replaced"
 }]]></ee:set-payload>
             </ee:message>
-        </ee:transform></flow>
+        </ee:transform>
+		</try>
+				<error-handler>
+					<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="fc7cdaf1-9e9d-4360-8989-7d7955d85196" type="DB:BAD_SQL_SYNTAX, DB:CONNECTIVITY, DB:QUERY_EXECUTION, DB:RETRY_EXHAUSTED">
+						<logger level="INFO" doc:name="Logger" doc:id="13234b39-18ef-4972-b90b-7a5844dcb641" />
+						<set-variable value="500" doc:name="Set Variable" doc:id="b083096e-b5f0-4071-84e0-3a11283430dd" variableName="httpStatus" />
+						<set-payload value='#[{"message":"Error inserting contacts. Internal Server Error " }]' doc:name="Set Payload" doc:id="4217d250-2f66-41fc-b23b-9827674f8ddd" />
+					</on-error-propagate>
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="e378404f-020e-4629-a017-8bbea9816017" type="VALIDATION:INVALID_BOOLEAN">
+					<logger level="INFO" doc:name="Logger" doc:id="54c99804-1f15-484c-a06d-ce155d363266" />
+					<set-variable value="404" doc:name="Set Variable" doc:id="69683313-0522-4888-99d9-ded342c08bf1" variableName="httpStatus" />
+					<set-payload value='#[{"message":"Contact Not Found"}]' doc:name="Set Payload" doc:id="37c201f4-d721-4561-bbf6-e29b236f15e0" />
+				</on-error-propagate>
+			    
+</error-handler></flow>
 </mule>
