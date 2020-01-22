@@ -1,0 +1,119 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="ContactsArray" format="json">
+      <types:shape format="weave" example="api/examples/contactsArray.json"><![CDATA[%dw 2.0
+
+type ContactsArray = Array<{|  Identification: {|    FirstName: String,     LastName: String,     DOB: String,     Gender: String,     Title: String  |},   Address: Array<{|    "type": String,     number: Number {"typeId": "int"},     street: String,     Unit: String,     City: String,     State: String,     zipcode: String  |}>, 
+  Communication: Array<{|    "type": String,     value: String,     preferred: String  |}>
+|}> {"example": "[{\\\"Identification\\\":{\\\"FirstName\\\":\\\"Bob\\\",\\\"LastName\\\":\\\"Frederick\\\",\\\"DOB\\\":\\\"06\\/21\\/1980\\\",\\\"Gender\\\":\\\"M\\\",\\\"Title\\\":\\\"Associate1\\\"},\\\"Address\\\":[{\\\"type\\\":\\\"home\\\",\\\"number\\\":1234,\\\"street\\\":\\\"blah blah St\\\",\\\"Unit\\\":\\\"1 a\\\",\\\"City\\\":\\\"Somewhere\\\",\\\"State\\\":\\\"WV\\\",\\\"zipcode\\\":\\\"12345\\\"}],\\\"Communication\\\":[{\\\"type\\\":\\\"email\\\",\\\"value\\\":\\\"bfe@sample.com\\\",\\\"preferred\\\":\\\"true\\\"},{\\\"type\\\":\\\"cell\\\",\\\"value\\\":\\\"304-555-8282\\\"}]},{\\\"Identification\\\":{\\\"FirstName\\\":\\\"Jessica\\\",\\\"LastName\\\":\\\"Pandit\\\",\\\"DOB\\\":\\\"06\\/21\\/1987\\\",\\\"Gender\\\":\\\"F\\\",\\\"Title\\\":\\\"Manager\\\"},\\\"Address\\\":[{\\\"type\\\":\\\"condo\\\",\\\"number\\\":2234,\\\"street\\\":\\\"blah1 blah2 St\\\",\\\"Unit\\\":\\\"1 b\\\",\\\"City\\\":\\\"Somewhere\\\",\\\"State\\\":\\\"KY\\\",\\\"zipcode\\\":\\\"32346\\\"}],\\\"Communication\\\":[{\\\"type\\\":\\\"email\\\",\\\"value\\\":\\\"bfe2@sample.com\\\",\\\"preferred\\\":\\\"true\\\"},{\\\"type\\\":\\\"cell\\\",\\\"value\\\":\\\"304-555-8284\\\"}]}]"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="Contact" format="json">
+      <types:shape format="weave" example="examples/contact-1.json"><![CDATA[%dw 2.0
+
+type Contact = {|
+  Identification: {|
+    FirstName: String, 
+    LastName: String, 
+    DOB: String, 
+    Gender: String, 
+    Title: String
+  |}, 
+  Address: Array<{|    "type": String,     number: Number {"typeId": "int"},     street: String,     Unit: String,     City: String,     State: String,     zipcode: String  |}>, 
+  Communication: Array<{|    "type": String,     value: String,     preferred: String  |}>
+|} {"example": "{\\\"Identification\\\":{\\\"FirstName\\\":\\\"Bob\\\",\\\"LastName\\\":\\\"Frederick\\\",\\\"DOB\\\":\\\"06\\/21\\/1980\\\",\\\"Gender\\\":\\\"M\\\",\\\"Title\\\":\\\"Associate1\\\"},\\\"Address\\\":[{\\\"type\\\":\\\"home\\\",\\\"number\\\":1234,\\\"street\\\":\\\"blah blah St\\\",\\\"Unit\\\":\\\"1 a\\\",\\\"City\\\":\\\"Somewhere\\\",\\\"State\\\":\\\"WV\\\",\\\"zipcode\\\":\\\"12345\\\"}],\\\"Communication\\\":[{\\\"type\\\":\\\"email\\\",\\\"value\\\":\\\"bfe@sample.com\\\",\\\"preferred\\\":\\\"true\\\"},{\\\"type\\\":\\\"cell\\\",\\\"value\\\":\\\"304-555-8282\\\"}]}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="inputQuery" format="java">
+      <types:shape format="raml"><![CDATA[#%RAML 1.0 DataType
+type: object
+properties:
+      queryParams:
+        properties:
+            firstname:
+              required: false
+              type: string
+            lastname:
+              required: false
+              type: string
+            pageNumber:
+              required: false
+              type: integer
+              minimum: 1
+              format: int
+              default: 1
+            title:
+              required: false
+              type: string
+              enum: ["manager", "associate1", "associate2"]
+      ]]></types:shape>
+    </types:type>
+    <types:type name="ContactsWithIDArray" format="json">
+      <types:shape format="weave" example="api/examples/contactsArrayWithID.json"><![CDATA[%dw 2.0
+
+type ContactsWithIDArray = Array<{|  Identification: {|    FirstName: String,     LastName: String,     DOB: String,     Gender: String,     Title: String  |},   Address: Array<{|    "type": String,     number: Number {"typeId": "int"},     street: String,     Unit: String,     City: String,     State: String,     zipcode: String  |}>, 
+  Communication: Array<{|    "type": String,     value: String,     preferred: String  |}>, 
+  ID: Number {"typeId": "int"}
+|}> {"example": "[{\\\"Identification\\\":{\\\"FirstName\\\":\\\"Bob\\\",\\\"LastName\\\":\\\"Frederick\\\",\\\"DOB\\\":\\\"06\\/21\\/1980\\\",\\\"Gender\\\":\\\"M\\\",\\\"Title\\\":\\\"Associate1\\\"},\\\"Address\\\":[{\\\"type\\\":\\\"home\\\",\\\"number\\\":1234,\\\"street\\\":\\\"blah blah St\\\",\\\"Unit\\\":\\\"1 a\\\",\\\"City\\\":\\\"Somewhere\\\",\\\"State\\\":\\\"WV\\\",\\\"zipcode\\\":\\\"12345\\\"}],\\\"Communication\\\":[{\\\"type\\\":\\\"email\\\",\\\"value\\\":\\\"bfe@sample.com\\\",\\\"preferred\\\":\\\"true\\\"},{\\\"type\\\":\\\"cell\\\",\\\"value\\\":\\\"304-555-8282\\\"}],\\\"ID\\\":1},{\\\"Identification\\\":{\\\"FirstName\\\":\\\"Jessica\\\",\\\"LastName\\\":\\\"Pandit\\\",\\\"DOB\\\":\\\"06\\/21\\/1987\\\",\\\"Gender\\\":\\\"F\\\",\\\"Title\\\":\\\"Manager\\\"},\\\"Address\\\":[{\\\"type\\\":\\\"condo\\\",\\\"number\\\":2234,\\\"street\\\":\\\"blah1 blah2 St\\\",\\\"Unit\\\":\\\"1 b\\\",\\\"City\\\":\\\"Somewhere\\\",\\\"State\\\":\\\"KY\\\",\\\"zipcode\\\":\\\"32346\\\"}],\\\"Communication\\\":[{\\\"type\\\":\\\"email\\\",\\\"value\\\":\\\"bfe2@sample.com\\\",\\\"preferred\\\":\\\"true\\\"},{\\\"type\\\":\\\"cell\\\",\\\"value\\\":\\\"304-555-8284\\\"}],\\\"ID\\\":2}]"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#d1596a94-ade6-4a5e-bac4-8737d329a171">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="ContactsArray"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#59939a67-84d1-4f87-b9c8-5aefa1d1f51a">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:variables>
+          <types:variable name="store" type="ContactsWithIDArray"/>
+        </types:variables>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#af54ec48-54e2-408a-8d54-9130c1cb3736">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="Contact"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#e624e6d3-9e9a-4d93-8824-2083c4550d8c">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="ContactsArray"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#62f8c216-fa98-4e32-86aa-16f472a4db27">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="Contact"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#d097b588-e64a-411f-a8a9-ce214b8bf7bf">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="ContactsArray"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>

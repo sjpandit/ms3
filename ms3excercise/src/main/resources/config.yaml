@@ -1,0 +1,11 @@
+http:
+  port: "8081"
+  
+mysql:
+  port: "3306"
+  host: "localhost"
+  dbname: "contactmgt"
+  user: "admin2"
+  pwd: "admin2"
+  maxpoolsize: "20"
+  statementcache: "20"  

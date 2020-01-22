@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+    <http:listener-config name="ContactMgtAPI-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="${http.port}" />
+    </http:listener-config>
+    <apikit:config name="ContactMgtAPI-config" api="api\ContactMgtAPI.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <configuration-properties doc:name="Configuration properties" doc:id="09ecd53b-2f28-422e-b2ed-c020596eb4be" file="config.yaml" />
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="74e88019-f079-48df-9d7f-44a595ba5684" >
+		<db:my-sql-connection host="${mysql.host}" port="${mysql.port}" user="${mysql.user}" password="${mysql.pwd}" database="${mysql.dbname}" >
+			<db:pooling-profile maxPoolSize="${mysql.maxpoolsize}" preparedStatementCacheSize="${mysql.statementcache}" />
+		</db:my-sql-connection>
+	</db:config>
+	<configuration doc:name="Configuration" doc:id="5223749d-489a-4b10-bf53-732f667d0540" defaultErrorHandler-ref="deferrorhandlerError_Handler" />
+	<flow name="ContactMgtAPI-main">
+        <http:listener config-ref="ContactMgtAPI-httpListenerConfig" path="/api/custmgt/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[output application/json --- payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="ContactMgtAPI-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="ContactMgtAPI-console">
+        <http:listener config-ref="ContactMgtAPI-httpListenerConfig" path="/api/custmgt/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="ContactMgtAPI-config" />
+        <logger level="INFO" doc:name="Logger" doc:id="3f0bac47-840e-4d03-9b2e-ea4da7a8672c" />
+		<error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <logger level="INFO" doc:name="Logger" doc:id="fd5bb1b2-7b08-4cbd-ae3c-2c435ee2573b" />
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="7b9d1b2f-243a-4329-9444-13dac2a4973f">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[404]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="put:\contacts\(id):application\json:ContactMgtAPI-config">
+		<flow-ref doc:name="putByID" doc:id="162f3864-73ab-48d6-9832-84efa4a4ad66" name="putByID"/>
+        <error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="4c0469bc-4482-4bfb-8408-6845746c1aac" type="EXPRESSION">
+				<flow-ref doc:name="Error400" doc:id="3836c5ce-3887-40f4-ba9f-37e647a4c540" name="Error400" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="08c088b7-06ec-45fb-b5f1-7b4200b74e26" type="ANY">
+				<flow-ref doc:name="Generic500" doc:id="090ee50f-346c-4f8e-8407-4fb5504998d6" name="Generic500"/>
+			</on-error-propagate>
+		</error-handler>
+    </flow>
+    <flow name="delete:\contacts\(id):ContactMgtAPI-config">
+		<flow-ref doc:name="deleteByID" doc:id="912d1abf-9e00-4450-a598-122135c1c896" name="deleteByID"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="f0d7b7ce-989a-4809-9ba4-3be9fde85cce" type="ANY">
+				<flow-ref doc:name="Generic500" doc:id="b15f0322-4968-441c-a1ae-16271da54394" name="Generic500"/>
+			</on-error-propagate>
+		</error-handler>
+    </flow>
+	<flow name="patch:\contacts\(id):application\json:ContactMgtAPI-config">
+    	<flow-ref doc:name="patchById" doc:id="ba0cccfd-fb65-45d1-beb2-23c83b5eb8b4" name="patchByID"/>
+    </flow>
+    <flow name="get:\contacts:ContactMgtAPI-config">
+		<flow-ref doc:name="get" doc:id="b13324ab-85c8-47d6-bbfc-42eb24e4e1d7" name="get"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c25bb6db-08e9-4ce1-a136-12c4521ddfc4" type="DB:BAD_SQL_SYNTAX, DB:CONNECTIVITY, DB:QUERY_EXECUTION">
+				<logger level="INFO" doc:name="Logger" doc:id="de678f0f-40b3-451d-8945-d01b9b13dec4" />
+				<set-variable value="400" doc:name="Set Variable" doc:id="a05f637a-17b6-4ef5-93d2-99578e9c3504" variableName="httpStatus"/>
+				<set-payload value='#[{"message":"Error retrieving contacts"}]' doc:name="Set Payload" doc:id="fcf021d6-276f-4a00-9118-b37e89420f19" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="2007a63c-0628-4d40-a7ee-f731faf2c5b3" type="EXPRESSION">
+				<flow-ref doc:name="Error400" doc:id="496f6bec-79e5-42cf-955a-e4bd302d24eb" name="Error400"/>
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="4980e5f5-8b3a-4570-8945-a3f8dd358180" type="VALIDATION:EMPTY_COLLECTION">
+				<logger level="INFO" doc:name="Logger" doc:id="033a9b9b-b0b7-4b6e-8e30-c30cd8f42ccf" />
+				<set-variable value="404" doc:name="Set Variable" doc:id="42433fe5-cc8d-4b0e-bf4c-64d5ab3df8a7" variableName="httpStatus"/>
+				<set-payload value='#[{"message":"Contacts Not Found"}]' doc:name="Set Payload" doc:id="84a7353a-e255-45d4-9c37-debf88279c35" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="66700832-30e3-4a9c-b8eb-50314adbbe06" >
+				<flow-ref doc:name="Error500" doc:id="8682bfa6-365f-4749-aa2a-62373615140b" name="Generic500" />
+			</on-error-propagate>
+		</error-handler>
+    </flow>
+	<flow name="get:\contacts\(id):ContactMgtAPI-config">
+		<flow-ref doc:name="getById" doc:id="f4114285-0583-4ad2-beca-118050b5e640" name="getByID"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="dd063b82-b68f-46aa-8f58-80519940f5a8" type="DB:BAD_SQL_SYNTAX, DB:CONNECTIVITY, DB:QUERY_EXECUTION">
+				<logger level="INFO" doc:name="Logger" doc:id="2e58dbf4-ff84-44a6-8fe6-e205226c1b66" />
+				<set-variable value="400" doc:name="Set Variable" doc:id="49241e36-b86a-4840-9c91-95a4cdda205d" variableName="httpStatus"/>
+				<set-payload value='#[{"message":"Error retrieving contacts"}]' doc:name="Set Payload" doc:id="6d293e50-16e9-4d98-83eb-5490af8ded81" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="32e0f4a3-67d8-4435-a204-6f134c332533" type="VALIDATION:EMPTY_COLLECTION">
+				<logger level="INFO" doc:name="Logger" doc:id="ab63bd5e-cf36-457c-b5e8-436bfdf7a173" />
+				<set-variable value="404" doc:name="Set Variable" doc:id="74bcd83c-6466-4bea-bbc7-0a03eac59b89" variableName="httpstatus" />
+				<set-payload value='#[{"message":"Contact Not Found"}]' doc:name="Set Payload" doc:id="f21679ce-d6ee-4770-a9e9-8602cf0cae9f" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ceb2740f-f4a2-408f-87bc-a1f9983e009f" type="EXPRESSION">
+				<flow-ref doc:name="Error400" doc:id="7d8bd883-42df-4e96-b63f-908e3cc68190" name="Error400" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="6db8c305-3131-4fd4-98f7-3a70a5ab3486" type="ANY">
+				<flow-ref doc:name="Generic500" doc:id="f129baed-3794-4ed4-bc08-0b19d0714589" name="Generic500" />
+			</on-error-propagate>
+		</error-handler>
+    </flow>
+	<flow name="post:\contacts:application\json:ContactMgtAPI-config">
+		<flow-ref doc:name="postFlow" doc:id="32eade90-27cf-4ac8-bd72-ec93851413ba" name="postFlow"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="b14e764b-b5ae-4793-b77a-f40626eb0280" type="EXPRESSION">
+				<flow-ref doc:name="Error400" doc:id="0f1defeb-4ac9-4d9c-b140-7e96f2d8d8fe" name="Error400" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="e674f64a-f0fa-49bc-8ac3-ff53b35218d1" type="ANY">
+				<flow-ref doc:name="Generic500" doc:id="39ab9c2c-ac4e-4e5e-83af-f199737df28e" name="Generic500"/>
+			</on-error-propagate>
+		</error-handler>
+    </flow>
+</mule>

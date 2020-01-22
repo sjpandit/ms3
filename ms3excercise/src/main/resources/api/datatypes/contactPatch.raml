@@ -1,0 +1,17 @@
+#%RAML 1.0 DataType
+
+uses:
+  add: address.raml
+  comm: communication.raml
+  iden: identification.raml
+type: object
+properties:
+  Identification:  
+    type: iden.id
+    required: false
+  Address:  
+    type: add.address[]
+    required: false
+  Communication:  
+    type: comm.comm[]
+    required: false

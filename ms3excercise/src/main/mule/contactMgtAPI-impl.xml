@@ -1,0 +1,428 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<flow name="patchByID" doc:id="87081a3b-c006-40bf-b8ce-add7dafb2e4d">
+    	<try doc:name="Try" doc:id="2f952ea5-40de-4624-b399-fe9505182b4b" transactionalAction="ALWAYS_BEGIN">
+			<db:select doc:name="Identification Query" doc:id="bb6f5b96-a74e-44f0-b356-c72a7e118d21" config-ref="Database_Config" target="ident">
+				<db:sql >select * from identification_tbl where contact_id=:id</db:sql>
+				<db:input-parameters ><![CDATA[#[{id:attributes.uriParams.id}]]]></db:input-parameters>
+			</db:select>
+			<validation:is-not-empty-collection doc:name="Is not empty collection" doc:id="46a673d0-f27c-4191-a86f-851e1d56a04b" values="#[vars.ident]"/>
+			<set-variable value="#[attributes.uriParams.id]" doc:name="Set var ID" doc:id="d9a4e25c-1eb8-49b7-b1f9-aa762b1b0f94" variableName="id"/>
+			<ee:transform doc:name="Transform Message" doc:id="a4ad7241-c85d-4406-8529-f793d2d3751a" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+
+fun checkIden(pay) = if (sizeOf(pay.Identification default{})>0)(
+	                 lookup('updateIdentification',payload)
+                    )else (
+                    	{message:"Do not call"}
+                    )
+fun checkAddr(pay) = if (sizeOf(pay.Address default {})>0)(
+	                 lookup('updateAddress',payload)
+                    )else (
+                    	{message:"Do not call"}
+                    )
+fun checkComm(pay) = if (sizeOf(pay.Communication default {})>0)(
+	                 lookup('updateCommunication',payload)
+                    )else (
+                    	{message:"Do not call"}
+                    )
+---
+//using (withID=[payload] map ( payload01 , indexOfPayload01 )->{
+//		Identification:payload01.Identification,
+//		Address:payload01.Address,
+//		Communication:payload01.Communication,
+//		ID:attributes.uriParams.id
+//}
+//)
+{Iden:checkIden(payload),Addr:checkAddr(payload) ,Comm:checkComm(payload)}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<error-handler>
+					<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="bdc54af5-512f-42b7-9943-9090aa60e0c4" type="DB:BAD_SQL_SYNTAX, DB:CONNECTIVITY, DB:QUERY_EXECUTION, DB:RETRY_EXHAUSTED">
+						<logger level="INFO" doc:name="Logger" doc:id="45e80ae6-83dc-4fd1-abda-c2c8cff5e0f6" />
+						<set-variable value="500" doc:name="Set Variable" doc:id="81ce03a2-a0db-441c-a79d-f60cebe2937a" variableName="httpStatus" />
+						<set-payload value='#[{"message":"Error inserting contacts. Internal Server Error " }]' doc:name="Set Payload" doc:id="e2c2b9da-8f3c-4e08-81ce-aa2887e7b71b" />
+					</on-error-propagate>
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="24a01b04-84c3-484b-aeb7-ccb81bb3c7ef" type="VALIDATION:EMPTY_COLLECTION">
+					<logger level="INFO" doc:name="Logger" doc:id="f9f3eb6b-ee10-404b-af11-974b057eecdd" />
+					<set-variable value="404" doc:name="Set Variable" doc:id="8787dfe1-f91b-40bf-ab27-961a66bdace5" variableName="httpStatus"/>
+					<set-payload value='#[{"message":"Contact not found"}]' doc:name="Set Payload" doc:id="72646b8d-3ff2-45e3-ab41-3b90b7567b52" />
+				</on-error-propagate>
+			    </error-handler>
+		</try>
+        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="1bca718c-f721-4524-bc1b-e6866976f2bd">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "Contact modified"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform></flow>
+	<flow name="get" doc:id="7d92a54d-3033-4bf6-a3a4-8ddc0374ce00">
+		<set-variable doc:name="Create Query" doc:id="614aa78b-d7a2-4b92-90fe-d6bed5516821" variableName="query" value="#[%dw 2.0
+output text/plain
+import * from dw::core::Strings
+var pageNoLow = ((attributes.queryParams.pagenumber default 1)*1000 - 1000) default 0
+var pageNoHigh =((attributes.queryParams.pagenumber default 1)*1000 -1 ) default 999
+fun firstname(str1)=if(str1==null)(&quot;&quot;)else(&quot;and first_name='&quot;++ upper((str1 as String))++&quot;' &quot;)
+fun lastname(str1)=if(str1==null)(&quot;&quot;)else(&quot;and last_name='&quot;++ upper((str1 as String))++&quot;' &quot;)
+fun title(str1)=if(str1==null)(&quot;&quot;)else(&quot;and title='&quot;++ upper((str1 as String))++&quot;' &quot;)
+fun sanitize(str1)=substringAfter(substringAfter(substringAfter(str1,&quot;a&quot;),&quot;n&quot;),&quot;d&quot;)
+fun getQuery(str1,str2,str3)=if(str1==null and str2==null and str3==null)(
+                       &quot;select * from identification_tbl limit &quot;
+                       )else(
+                       	&quot;select * from identification_tbl where &quot;++ sanitize(firstname(str1)++ lastname(str2)++ title(str3))++ &quot; limit &quot;
+                       )
+---
+getQuery(attributes.queryParams.firstname,attributes.queryParams.lastname,attributes.queryParams.title)++
+(pageNoLow as String)++&quot;,&quot;++(pageNoHigh as String)]"/>
+		<db:select doc:name="IdenQuery" doc:id="252f8c85-1021-4183-99d1-2ba290d589e9" config-ref="Database_Config" target="iden_res">
+			<ee:repeatable-file-store-iterable inMemoryObjects="999" />
+			<db:sql>#[vars.query]</db:sql>
+		</db:select>
+		<validation:is-not-empty-collection doc:name="Is not empty collection" doc:id="0119a9dc-387a-4b99-9a49-d4a4578ccf22" values="#[vars.iden_res]"/>
+		<set-variable value="#[[]]" doc:name="Set store var" doc:id="6bd27505-64c9-4a3b-9c36-7abff9176155" variableName="store"/>
+		<foreach doc:name="For Each" doc:id="961371cd-e746-4ef4-807f-9abbbb3ce3ee" collection="#[vars.iden_res]">
+			<db:select doc:name="Address Query" doc:id="ad326e07-7b61-4463-9ffb-2cc753a9cb71" config-ref="Database_Config" target="address">
+				<db:sql >select * from address_tbl where contact_id=:id</db:sql>
+				<db:input-parameters ><![CDATA[#[{'id':payload.contact_id as String}]]]></db:input-parameters>
+			</db:select>
+			<db:select doc:name="Communication Query" doc:id="a2544ac9-96f3-41d5-ab48-4f4fbc2cfff1" config-ref="Database_Config" target="comm">
+				<db:sql >select * from communication_tbl where contact_id=:id</db:sql>
+				<db:input-parameters ><![CDATA[#[{'id':payload.contact_id as String}]]]></db:input-parameters>
+			</db:select>
+			<ee:transform doc:name="Transform Message" doc:id="2f92066c-3d43-46cf-9172-e82928aad33d">
+			<ee:message>
+			</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="store" ><![CDATA[%dw 2.0
+output application/json
+---
+
+using (iden=[payload] map ( payload01 , indexOfPayload01 )->{
+		FirstName:payload01.first_name,
+		LastName:payload01.last_name,
+		DOB:payload01.dob as String {format: "MM/dd/yyyy"},
+		Gender:payload01.gender,
+		Title:payload01.title
+}
+)
+
+using (addr=vars.address map ( payload01 , indexOfPayload01 ) -> {
+	//	id:payload01.id,
+		'type': payload01.addrType,
+		number: payload01.addrNumber,
+		street: payload01.street,
+		Unit:payload01.unit,
+		City: payload01.city,
+		State:payload01.state,
+		zip: payload01.zipcode
+	}
+)
+using (comm=vars.comm map ( payload01 , indexOfPayload01 ) -> {
+
+	//	id:payload01.id,
+		'type': payload01.commType,
+		value: payload01.commValue,
+		preferred: payload01.preferred
+	 
+	}
+)	
+vars.store + {Identification:iden[0],Address:addr,Communication:comm,ID:payload.contact_id}]]></ee:set-variable>
+				</ee:variables>
+		</ee:transform>
+		</foreach>
+		<ee:transform doc:name="Transform Message" doc:id="d06e4755-3d6d-47b0-a248-a7e47b2dc17e">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+vars.store]]></ee:set-payload>
+			</ee:message>
+		</ee:transform></flow>
+	<flow name="getByID" doc:id="5bad167e-90fd-4ea1-b2a1-78b01eef469f"><db:select doc:name="Identification" doc:id="b48ea113-bbea-469e-a68d-e8e41b03e3a0" config-ref="Database_Config" target="identification">
+			<db:sql >select * from identification_tbl where contact_id=:id</db:sql>
+			<db:input-parameters ><![CDATA[#[{'id':attributes.uriParams.id}]]]></db:input-parameters>
+		</db:select>
+		<validation:is-not-empty-collection doc:name="Is not empty collection" doc:id="8b2b4167-f0d1-4b4e-af47-439bf2462a57" values="#[vars.identification]"/>
+		<db:select doc:name="Address Query" doc:id="a04323cf-533f-4cef-9eb3-da97312f64f1" config-ref="Database_Config" target="address">
+			<db:sql >select * from address_tbl where contact_id=:id</db:sql>
+			<db:input-parameters ><![CDATA[#[{'id':attributes.uriParams.id}]]]></db:input-parameters>
+		</db:select>
+		<db:select doc:name="Communication" doc:id="edcd4e7e-48ad-4a43-bda4-ed6c0b448f8b" config-ref="Database_Config">
+			<db:sql >select * from communication_tbl where contact_id=:id</db:sql>
+			<db:input-parameters ><![CDATA[#[{'id':attributes.uriParams.id}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" doc:id="bf059598-3226-477b-98ff-846f60e5f120">
+            <ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	Identification: {
+		FirstName: vars.identification[0].first_name,
+		LastName: vars.identification[0].last_name,
+		DOB: (vars.identification.dob[0] as String {format: "MM/dd/yyyy"}),
+		Gender: vars.identification[0].gender default "",
+		Title: vars.identification[0].title
+	},
+	Address: vars.address map ( address , indexOfAddress ) -> {
+		"type": address.addrType default "",
+		number: address.addrNumber default 0,
+		street: address.street default "",
+		Unit: address.unit default "",
+		City: address.city default "",
+		State: address.state default "",
+		zipcode: address.zipcode default ""
+	},
+	Communication: payload map ( payload01 , indexOfPayload01 ) -> {
+		"type": payload01.commType default "",
+		value: payload01.commValue default "",
+		preferred: payload01.preferred default ""
+	},
+	ID:vars.identification[0].contact_id
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+                <ee:set-variable variableName="id"><![CDATA[attributes.uriParams.'id']]></ee:set-variable>
+            </ee:variables>
+        </ee:transform></flow>
+	<flow name="postFlow" doc:id="e2510ae3-2fae-4e65-ad24-65743f7538d7" ><try doc:name="Try" doc:id="a6835003-78a9-4b99-8b79-a8923a93b736" transactionalAction="ALWAYS_BEGIN">
+			<foreach doc:name="For Each" doc:id="d097b588-e64a-411f-a8a9-ce214b8bf7bf">
+				<db:insert doc:name="InsertToIDTable" doc:id="ae42a42b-1600-413d-8e5d-5d2546b6593b" config-ref="Database_Config" transactionalAction="ALWAYS_JOIN" target="var1">
+			<reconnect />
+					<db:sql>INSERT INTO identification_tbl(first_name, last_name, dob,gender, title)
+        VALUES (:FirstName, :LastName, :DOB,:Gender, :Title)</db:sql>
+			<db:input-parameters><![CDATA[#[{'FirstName': upper(payload.Identification.FirstName),
+		'LastName': upper(payload.Identification.LastName),
+		'DOB': (payload.Identification.DOB as Date {format: "MM/dd/yyyy"}),
+		'Gender': payload.Identification.Gender,
+		'Title': upper(payload.Identification.Title)}]]]></db:input-parameters>
+		</db:insert>
+				<db:select doc:name="GetIDFromIDTable" doc:id="b61596e7-91b3-49d4-b54e-1a75af8ea678" config-ref="Database_Config" transactionalAction="ALWAYS_JOIN" target="id">
+					<db:sql>select max(contact_id) as id from identification_tbl</db:sql>
+				</db:select>
+				<foreach doc:name="For Each" doc:id="0c1e7ccc-8209-4b86-9190-2ddc150ac73d" collection="#[payload.Address]">
+					<db:insert doc:name="InsertToAddress" doc:id="3763dbee-9b02-4ec7-b177-3fbd849a83f2" config-ref="Database_Config" transactionalAction="ALWAYS_JOIN">
+						<db:sql >INSERT INTO address_tbl(addrType, addrNumber, street, unit,city, state, zipcode, contact_id)
+        VALUES (upper(:type),:number, :street, :unit,:city,:state, :zipcode,:contact_id)</db:sql>
+						<db:input-parameters ><![CDATA[#[{
+	 'type':payload."type",
+		'number':payload.number,
+		'street': payload.street,
+		'unit': payload.Unit,
+		'city': payload.City,
+		'state': payload.State,
+		'zipcode': payload.zipcode,
+		'contact_id': vars.id[0].id as Number
+}]]]></db:input-parameters>
+					</db:insert>
+				</foreach>
+				<foreach doc:name="For Each" doc:id="011cebb1-94a8-4281-ba10-e80351ec27e5" collection="#[payload.Communication]">
+					<db:insert doc:name="InsertToCommunication" doc:id="66ad4eb4-dec6-45a5-9856-5b776f69ad3c" config-ref="Database_Config" transactionalAction="ALWAYS_JOIN">
+						<db:sql >INSERT INTO communication_tbl(commType, commValue,preferred,contact_id)
+        VALUES (upper(:type), :value, :preferred,:contact_id)</db:sql>
+						<db:input-parameters ><![CDATA[#[{
+	 'type':payload."type",
+		'value':payload.value,
+		'preferred': payload.preferred,
+		'contact_id': vars.id[0].id as Number
+}]]]></db:input-parameters>
+					</db:insert>
+				</foreach>
+		</foreach>
+			<error-handler>
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="369edbff-a809-4dee-afea-f70a64c00551" type="DB:BAD_SQL_SYNTAX, DB:CONNECTIVITY, DB:QUERY_EXECUTION, DB:RETRY_EXHAUSTED">
+					<logger level="INFO" doc:name="Logger" doc:id="8ed4a4a9-f20e-4291-9e8e-a427bdf1f500" />
+					<set-variable value="500" doc:name="Set Variable" doc:id="d07ae532-144f-40fe-a852-b562370555f6" variableName="httpStatus" />
+					<set-payload value='#[{"message":"Error inserting contacts. Internal Server Error " }]' doc:name="Set Payload" doc:id="26bfe296-6d99-410b-a884-34139b7f57df" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd 
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="ddc74f6f-9ba8-4956-9fe3-cd0f6340647c">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "Contacts uploaded"
+}]]></ee:set-payload>
+            </ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="httpStatus" ><![CDATA[%dw 2.0
+output text/plain
+---
+201]]></ee:set-variable>
+			</ee:variables>
+        </ee:transform></flow>
+	<flow name="updateAddress" doc:id="6d6f3b37-c1ff-4566-a71f-3f469beadaf9" >
+		<try doc:name="Try" doc:id="b0ca87a1-42d4-4a96-8071-ad3bbc9ce4e1" transactionalAction="BEGIN_OR_JOIN" transactionType="XA">
+			<db:delete doc:name="Delete in Address" doc:id="dd8034fe-cc27-4710-b792-3ca1946bfcf5" config-ref="Database_Config" target="var2" transactionalAction="ALWAYS_JOIN">
+				<db:sql>Delete from address_tbl where contact_id=:id</db:sql>
+				<db:input-parameters><![CDATA[#[{'id':vars.id}]]]></db:input-parameters>
+			</db:delete>
+			<foreach doc:name="For Each" doc:id="f4bd10ca-5e7c-4fa4-bcb5-4e31ca786dcf" collection="#[payload.Address]">
+				<db:insert doc:name="Insert in Address" doc:id="271a9ade-16e6-4195-ba4f-a0f5959ad767" config-ref="Database_Config" transactionalAction="ALWAYS_JOIN">
+						<db:sql>INSERT INTO address_tbl(addrType, addrNumber, street, unit,city, state, zipcode, contact_id)
+        VALUES (upper(:type),:number, :street, :unit,:city,:state, :zipcode,:contact_id)</db:sql>
+						<db:input-parameters><![CDATA[#[{
+	 'type':payload."type",
+		'number':payload.number,
+		'street': payload.street,
+		'unit': payload.Unit,
+		'city': payload.City,
+		'state': payload.State,
+		'zipcode': payload.zipcode,
+		'contact_id': vars.id
+}]]]></db:input-parameters>
+					</db:insert>
+				</foreach>
+		</try>
+	</flow>
+	<flow name="updateCommunication" doc:id="76d92a95-0dba-4d70-a31d-ee4c2de8d161" >
+		<try doc:name="Try" doc:id="fbfeaa74-1f35-48bf-9a93-fbee563ff0e5" transactionalAction="BEGIN_OR_JOIN" transactionType="XA">
+			<db:delete doc:name="Delete in Communication" doc:id="2c212c75-2da2-4725-9682-a8bc7573d1d3" config-ref="Database_Config" target="var3" transactionalAction="ALWAYS_JOIN">
+				<db:sql>Delete from communication_tbl where contact_id=:id</db:sql>
+				<db:input-parameters><![CDATA[#[{'id':vars.id}]]]></db:input-parameters>
+			</db:delete>
+			<foreach doc:name="For Each" doc:id="d70ffcc2-d426-4e1b-9356-d63200e4c71e" collection="#[payload.Communication]">
+					<db:insert doc:name="Insert in Communication" doc:id="8f444750-26b9-445f-9256-bf71a89f30b3" config-ref="Database_Config" transactionalAction="ALWAYS_JOIN">
+						<db:sql>INSERT INTO communication_tbl(commType, commValue,preferred,contact_id)
+        VALUES (upper(:type), :value, :preferred,:contact_id)</db:sql>
+						<db:input-parameters><![CDATA[#[{
+	 'type':payload."type",
+		'value':payload.value,
+		'preferred': payload.preferred,
+		'contact_id': vars.id as Number
+}]]]></db:input-parameters>
+					</db:insert>
+				</foreach>
+		</try>
+	</flow>
+	<flow name="updateIdentification" doc:id="118c1b80-113e-4f8d-ad42-6642974e81c5" >
+		<db:update doc:name="Identification Query" doc:id="d7c65494-6fc5-42d9-9be6-14ff22b595a2" config-ref="Database_Config" target="update">
+				<db:sql>UPDATE identification_tbl
+SET first_name = :FirstName, last_name = :LastName, dob=:DOB, gender=:Gender, title=:Title 
+WHERE contact_id=:id</db:sql>
+				<db:input-parameters><![CDATA[#[{'FirstName': upper(payload.Identification.FirstName),
+		'LastName': upper(payload.Identification.LastName),
+		'DOB': (payload.Identification.DOB as Date {format: "MM/dd/yyyy"}),
+		'Gender': payload.Identification.Gender,
+		'Title': upper(payload.Identification.Title),
+		'id': vars.id}]]]></db:input-parameters>
+			</db:update>
+	</flow>
+	<flow name="deleteByID" doc:id="28aa814a-aa71-4d14-9f50-301806f3fe9a">
+		<try doc:name="Try" doc:id="8ff28d47-d356-430e-9f83-5079d4661f3e" transactionalAction="ALWAYS_BEGIN">
+			<db:delete doc:name="DeleteInId" doc:id="e6c6346c-b92d-41cf-9b2e-46bcc92f43ba" config-ref="Database_Config" transactionalAction="ALWAYS_JOIN">
+				<db:sql>Delete from identification_tbl where contact_id=:id</db:sql>
+				<db:input-parameters><![CDATA[#[{'id':attributes.uriParams.id}]]]></db:input-parameters>
+			</db:delete>
+			<db:delete doc:name="DeleteInAddress" doc:id="2c484710-a7d7-4e9d-adf3-1442a8d137f4" config-ref="Database_Config" transactionalAction="ALWAYS_JOIN">
+			<db:sql>Delete from address_tbl where contact_id=:id</db:sql>
+			<db:input-parameters><![CDATA[#[{'id':attributes.uriParams.id}]]]></db:input-parameters>
+		</db:delete>
+			<db:delete doc:name="DeleteInComm" doc:id="ec39119b-180f-4955-a5f2-049b6318edc2" config-ref="Database_Config" transactionalAction="ALWAYS_JOIN">
+				<db:sql >Delete from communication_tbl where contact_id=:id</db:sql>
+				<db:input-parameters ><![CDATA[#[{'id':attributes.uriParams.id}]]]></db:input-parameters>
+			</db:delete>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ee6f81b7-af87-4bb4-9b54-762cef390022" type="DB:BAD_SQL_SYNTAX, DB:CONNECTIVITY, DB:QUERY_EXECUTION, DB:RETRY_EXHAUSTED">
+					<logger level="INFO" doc:name="Logger" doc:id="6725fc8c-83c1-47eb-a32f-f41a348fe2d9" />
+					<set-variable value="400" doc:name="Set Variable" doc:id="05133f5e-dd2a-45ed-ba4c-830649d41784" variableName="httpStatus"/>
+					<set-payload value='#[{"message":"Error deleting contacts"}]' doc:name="Set Payload" doc:id="89707302-9e47-4be9-b728-07b5a7a7b874" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="0190bd89-ad02-49ca-878e-057b1cd8e949">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "Contact deleted"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform></flow>
+	<flow name="putByID" doc:id="3f18354c-7c71-4ac5-92e7-edf2c9659720">
+		<try doc:name="Try" doc:id="f11b5073-75cf-4f14-87f9-b29a3c6b05aa" transactionalAction="ALWAYS_BEGIN">
+			<set-variable value="#[attributes.uriParams.id]" doc:name="Set Variable" doc:id="a38e3e00-6fb9-4a7c-925e-a2a996f911d0" variableName="contact_id"/>
+			<db:update doc:name="UpdateIdTable" doc:id="7c6c6e2e-da35-45bb-b972-0b71d3be32ce" config-ref="Database_Config" target="var1" transactionalAction="ALWAYS_JOIN">
+				<db:sql >UPDATE identification_tbl
+SET first_name = :FirstName, last_name = :LastName, dob=:DOB, gender=:Gender, title=:Title 
+WHERE contact_id=:id</db:sql>
+				<db:input-parameters ><![CDATA[#[{'FirstName': upper(payload.Identification.FirstName),
+		'LastName': upper(payload.Identification.LastName),
+		'DOB': (payload.Identification.DOB as Date {format: "MM/dd/yyyy"}),
+		'Gender': payload.Identification.Gender,
+		'Title': upper(payload.Identification.Title),
+		'id': vars.contact_id}]]]></db:input-parameters>
+			</db:update>
+			<db:delete doc:name="DeleteInAddress" doc:id="feaafd0e-2b0e-4241-b248-cab1fcd2ec0f" config-ref="Database_Config" target="var2" transactionalAction="ALWAYS_JOIN">
+				<db:sql >Delete from address_tbl where contact_id=:id</db:sql>
+				<db:input-parameters ><![CDATA[#[{'id':attributes.uriParams.id}]]]></db:input-parameters>
+			</db:delete>
+			<foreach doc:name="For Each" doc:id="c22d9ae7-3683-49f9-8cb5-83e5071e6313" collection="#[payload.Address]">
+					<db:insert doc:name="InsertInAddress" doc:id="9915f9b8-70af-4ad9-a443-08ab24a3c9c4" config-ref="Database_Config" transactionalAction="ALWAYS_JOIN">
+						<db:sql >INSERT INTO address_tbl(addrType, addrNumber, street, unit,city, state, zipcode, contact_id)
+        VALUES (upper(:type),:number, :street, :unit,:city,:state, :zipcode,:contact_id)</db:sql>
+						<db:input-parameters ><![CDATA[#[{
+	 'type':payload."type",
+		'number':payload.number,
+		'street': payload.street,
+		'unit': payload.Unit,
+		'city': payload.City,
+		'state': payload.State,
+		'zipcode': payload.zipcode,
+		'contact_id': vars.contact_id
+}]]]></db:input-parameters>
+					</db:insert>
+				</foreach>
+				<db:delete doc:name="DeleteInComm" doc:id="189f62d1-ca7e-4f2f-ab66-bab297207787" config-ref="Database_Config" transactionalAction="ALWAYS_JOIN" target="var4">
+				<db:sql >Delete from communication_tbl where contact_id=:id</db:sql>
+				<db:input-parameters ><![CDATA[#[{'id':vars.contact_id}]]]></db:input-parameters>
+			</db:delete>
+			<foreach doc:name="For Each" doc:id="3c8fe863-2e6e-4a44-a47e-6808a249c830" collection="#[payload.Communication]">
+					<db:insert doc:name="InsertInComm" doc:id="ce3c1d79-d46c-473d-8eae-a46ae1a420d9" config-ref="Database_Config" transactionalAction="ALWAYS_JOIN">
+						<db:sql >INSERT INTO communication_tbl(commType, commValue,preferred,contact_id)
+        VALUES (upper(:type), :value, :preferred,:contact_id)</db:sql>
+						<db:input-parameters ><![CDATA[#[{
+	 'type':payload."type",
+		'value':payload.value,
+		'preferred': payload.preferred,
+		'contact_id': vars.contact_id
+}]]]></db:input-parameters>
+					</db:insert>
+				</foreach>
+				<error-handler>
+					<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="e14054bc-0ca0-4925-8904-bb3a2a2702cb" type="DB:BAD_SQL_SYNTAX, DB:CONNECTIVITY, DB:QUERY_EXECUTION, DB:RETRY_EXHAUSTED">
+						<logger level="INFO" doc:name="Logger" doc:id="d0c6043a-69f8-4346-bf89-54430afde051" />
+						<set-variable value="500" doc:name="Set Variable" doc:id="5b52d48f-ddf6-4631-8b1d-62ab3066017c" variableName="httpStatus" />
+						<set-payload value='#[{"message":"Error inserting contacts. Internal Server Error " }]' doc:name="Set Payload" doc:id="2b82c333-9223-4858-a80e-81e36215aa59" />
+					</on-error-propagate>
+			    </error-handler>
+		</try>
+		<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="8a94c884-d029-4d9e-bb71-2fd1c65c1e1b">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "Contact replaced"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform></flow>
+</mule>

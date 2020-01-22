@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<error-handler name="deferrorhandlerError_Handler" doc:id="7cf0bc4c-f5d5-4f26-b67c-00cf7ab238c1" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="aad5589e-3cad-45b2-b4c8-490b3df774ff" type="ANY">
+			<flow-ref doc:name="Flow Reference" doc:id="69b4d174-6e5d-4346-983b-0a0dc97d728c" name="Generic500"/>
+		</on-error-propagate>
+	</error-handler>	
+    <sub-flow name="Error400" doc:id="5a7fa1a8-8cae-4819-ac8a-32e902662293" >
+		<logger level="INFO" doc:name="Logger" doc:id="50b1870d-af34-48a9-847f-b5e5610ec040" />
+		<set-variable value="400" doc:name="Set Variable" doc:id="0219aa22-134b-44a8-99f8-b77d1351e402" variableName="httpStatus" />
+		<set-payload value='#[{"message":" Please, check the request or parameters" }]' doc:name="Set Payload" doc:id="8421db5d-c0ef-4836-9c7a-eb6807ed56be" />
+	</sub-flow>
+	<sub-flow name="Generic500" doc:id="20317ea2-cb1c-46bc-80ba-76afdd71678d" >
+		<logger level="INFO" doc:name="Logger" doc:id="f66fb4f2-386c-4e9f-8513-e45224e5afde" />
+		<set-variable value="500" doc:name="Set Variable" doc:id="e260c000-8f6e-4d3b-a850-4a99e9658121" variableName="httpStatus"/>
+		<set-payload value='#[{"message":"Internal Server Error"}]' doc:name="Set Payload" doc:id="1a64151f-41ec-4d64-980d-b7055ba3d410" />
+	</sub-flow>
+</mule>

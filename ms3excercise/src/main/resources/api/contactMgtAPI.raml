@@ -1,0 +1,167 @@
+#%RAML 1.0
+title: Contact Management API
+
+types:
+  Contact: !include datatypes/contact.raml
+  ContactWithID: !include datatypes/contactWithID.raml
+  ContactPatch: !include datatypes/contactPatch.raml
+
+/contacts:
+  get:
+    description: Retrieves contacts based on the given query parameters.
+    queryParameters:
+      firstname:
+        required: false
+        type: string
+      lastname:
+        required: false
+        type: string
+      pagenumber:
+        required: false
+        type: integer
+        minimum: 1
+        format: int
+        default: 1
+      title:
+        required: false
+        type: string
+        enum: ["manager", "associate1", "associate2"]
+    responses:
+      400:
+        body:
+          application/json:
+            example: {
+              "message": "Error retrieving data from the contact mgt database."}
+      200:
+        description: Returns an array of contact objects in JSON
+        body:
+          application/json:
+            type: ContactWithID[]
+      500:
+        body:
+          application/json:
+            example: {
+              "message": "Internal Server Error"}
+      404:
+          body:
+            application/json:
+              example: {
+                "message": "Contacts Not Found"}
+  post:
+    description: Creates new contacts based on a given array of Account objects.
+    body:
+      application/json:
+        description: Payload should be an array of contact objects with all fields present for each contact object.
+        type: Contact[]
+    responses:
+      400:
+        body:
+          application/json:
+             example: {
+               "message": "Error creating contacts. Please check the JSON object and make sure it's valid."}
+      201:
+        body:
+          application/json:
+            example: {
+              "message": "Contacts uploaded"}
+      500:
+        body:
+          application/json:
+            example: {
+              "message": "Error inserting contacts. Internal Server Error"}
+  /{id}:
+    get:
+      description: Retrieves information for a contact
+      responses:
+        400:
+          body:
+            application/json:
+              example: {
+                "message": "Error retrieving contact for the provided id. Please check whether the provided id is valid."} 
+        200:
+          body:
+            application/json:
+              type: Contact
+        500:
+          body:
+            application/json:
+              example: {
+                "message": "Internal Server Error"}
+        404:
+          body:
+            application/json:
+              example: {
+                "message": "Contact Not Found"}
+    put:
+      description: Replace all values of the associated Contact.
+      body: 
+        application/json:
+          description: The given expected object should contain all fields for contact.
+          type: Contact
+      responses:
+        400:
+          body:
+            application/json:
+              example: {
+                "message": "Error in replacing the Contact. Please check the JSON object and make sure it's valid."}
+        200:
+          body: 
+            application/json:
+              example: {
+                "message": "Contact replaced"}
+        500:
+         body:
+           application/json:
+             example: {
+              "message": "Internal Server Error"}
+        404:
+          body:
+            application/json:
+              example: {
+                "message": "Contact Not Found"}
+    patch:
+      description: Modify the associated Contact.
+      body: 
+        application/json:
+          description: The given expected object can contain one field or all fields for Contact that need to be modified.
+          type: ContactPatch
+      responses: 
+        400:
+          body:
+            application/json:
+              example: {
+                "mesage": "Error modifying the Contact. Please check the JSON object and make sure it's valid."}
+        200:
+          body: 
+            application/json:
+              example: {
+                "message": "Contact modified"}
+        500:
+          body:
+           application/json:
+             example: {
+               "message": "Internal Server Error"}
+        404:
+          body:
+            application/json:
+              example: {
+                "message": "Contact Not Found"}
+
+    delete:
+      description: Delete the associated account.
+      responses:
+        400: 
+          body:
+            application/json:
+              example: {
+                "message": "Error deleting Contact. Please check the Contact id supplied."}
+        200:
+          body:
+            application/json:
+              example: {
+                "message": "Contact deleted"}
+        500:
+          body:
+            application/json:
+              example: {
+                "message": "Internal Server Error"}

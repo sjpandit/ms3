@@ -1,0 +1,25 @@
+#%RAML 1.0 Library
+
+types:
+  id:
+    properties:
+      FirstName:  
+        type: string
+        required: true
+      LastName:  
+        type: string
+        required: true
+      DOB:  
+        type: string
+        required: false
+      Gender:  
+        type: string
+        required: false
+        default: U
+        enum: ["M","F", "U"]    
+      Title:  
+        type: string
+        required: true
+        enum: ["Manager", "Associate1", "Associate2"]
+        
+      

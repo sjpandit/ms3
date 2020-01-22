@@ -1,0 +1,17 @@
+#%RAML 1.0 Library
+
+types:
+  comm:
+    properties:
+      type:  
+        type: string
+        required: true
+        default: email
+        enum: ["email" , "cell"]
+      value:  
+        type: string
+        required: true
+      preferred:  
+        type: string
+        required: false
+        enum: ["true", nil]
