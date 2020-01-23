@@ -1,6 +1,7 @@
 Pre-requisites:
 1) Maven is setup
 2) Mule 4 runtime is available and up
+3) MySQL database installation available
 
 SETUP
 
