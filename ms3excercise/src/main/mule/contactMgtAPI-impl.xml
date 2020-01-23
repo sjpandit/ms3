@@ -366,7 +366,20 @@ WHERE contact_id=:id</db:sql>
 		'Title': upper(payload.Identification.Title),
 		'id': vars.contact_id}]]]></db:input-parameters>
 			</db:update>
-			<validation:is-false doc:name="Is false" doc:id="df51926a-d905-4390-890d-708369b86a6f" expression="#[vars.updateRes.affectedRows ==0]"/>
+			<choice doc:name="Choice" doc:id="f461da7c-9daa-4314-b7d3-cdf5087dd7e4" >
+				<when expression="#[vars.updateRes.affectedRows ==0]">
+					<db:insert doc:name="Insert" doc:id="0fc7fd59-cc7d-4a72-bd0f-672209c989d4" target="var3">
+						<db:sql >INSERT INTO identification_tbl(first_name, last_name, dob,gender, title,contact_id)
+        VALUES (:FirstName, :LastName, :DOB,:Gender, :Title,:contact_id)</db:sql>
+						<db:input-parameters ><![CDATA[#[{'FirstName': upper(payload.Identification.FirstName),
+		'LastName': upper(payload.Identification.LastName),
+		'DOB': (payload.Identification.DOB as Date {format: "MM/dd/yyyy"}),
+		'Gender': payload.Identification.Gender,
+		'Title': upper(payload.Identification.Title),
+		'contact_id':attributes.uriParams.id}]]]></db:input-parameters>
+					</db:insert>
+				</when>
+			</choice>
 			<db:delete doc:name="DeleteInAddress" doc:id="feaafd0e-2b0e-4241-b248-cab1fcd2ec0f" config-ref="Database_Config" target="var2" transactionalAction="ALWAYS_JOIN">
 				<db:sql>Delete from address_tbl where contact_id=:id</db:sql>
 				<db:input-parameters><![CDATA[#[{'id':attributes.uriParams.id}]]]></db:input-parameters>
