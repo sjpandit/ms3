@@ -12,9 +12,11 @@ SETUP
 6) Change to the directory ms3defaultdomain at the command line. Run mvn clean package. Deploy the default domain jar (using runtime agent if run against on-prem).
 7) Change to the directory ms3excercise at the command line. Run mvn clean package. Deploy the jar (using runtime agent if run against on-prem).
 8) The http listeners listens to 8081. If this port is not available, please use a port that is available and change the port in the ms3excercise/src/main/resources/config.yaml file and repeat step 7.
+9) SOAPUI unit test project is included at ./UnitTests-SOAPUI/MS3-soapui-project.xml.zip
 
 
 AVAILABLE METHODS
+The RAML spec is located at ms3excercise/src/main/resources/api/contactMgtAPI.raml
 
 http://<hostname:port>/api/custmgt/contacts
 
