@@ -16,6 +16,7 @@ SETUP
 
 
 AVAILABLE METHODS
+
 The RAML spec is located at ms3excercise/src/main/resources/api/contactMgtAPI.raml
 
 http://<hostname:port>/api/custmgt/contacts
