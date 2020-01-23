@@ -25,10 +25,10 @@ http://<<hostname:port>>/api/custmgt/contacts
 
 1) GET  (all contacts -  query parameters - all optional - firstname, lastname, title (manager, associate1,associate2), pagenumber (1,2 etc)
 2) POST (Array of contacts)
-3) GET BY ID uri paramters (/{id})
-4) PUT BY ID uri paramters (/{id})
-5) POST BY ID uri paramters (/{id})
-5) DELETE BY ID uri paramters (/{id})
+3) GET BY ID uri parameters (/{id})
+4) PUT BY ID uri parameters (/{id})
+5) POST BY ID uri parameters (/{id})
+5) DELETE BY ID uri parameters (/{id})
 
 Contact Example:
 {
