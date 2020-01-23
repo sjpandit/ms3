@@ -19,7 +19,8 @@ AVAILABLE METHODS
 
 The RAML spec is located at ms3excercise/src/main/resources/api/contactMgtAPI.raml
 
-http://<hostname:port>/api/custmgt/contacts
+The following is the resource path for the API.
+http://<<hostname:port>>/api/custmgt/contacts
 
 1) GET  (all contacts -  query parameters - all optional - firstname, lastname, title (manager, associate1,associate2), pagenumber (1,2 etc)
 2) POST (Array of contacts)
